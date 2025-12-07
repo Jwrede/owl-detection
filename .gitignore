@@ -1,1 +1,4 @@
-./venv/
+venv/
+files/*
+!files/.gitkeep
+__pycache__/
