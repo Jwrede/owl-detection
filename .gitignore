@@ -10,3 +10,5 @@ results/*
 !results/.gitkeep
 pipeline_plots/*
 !pipeline_plots/.gitkeep
+examples/*
+!examples/.gitkeep
