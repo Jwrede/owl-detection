@@ -2,3 +2,5 @@ venv/
 files/*
 !files/.gitkeep
 __pycache__/
+filtered_files/*
+!filtered_files/.gitkeep
