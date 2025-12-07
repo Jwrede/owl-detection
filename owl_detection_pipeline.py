@@ -19,6 +19,7 @@ from pathlib import Path
 import json
 import matplotlib.pyplot as plt
 import shutil
+from tqdm import tqdm
 
 
 def apply_bandpass_filter(audio, sample_rate, low_freq=500, high_freq=1500):
@@ -36,7 +37,7 @@ def apply_bandpass_filter(audio, sample_rate, low_freq=500, high_freq=1500):
 
 
 def filter_directory(input_dir, output_dir, low_freq=500, high_freq=1500):
-    """Filter all audio files in a directory."""
+    """Filter all audio files in a directory and subdirectories."""
     input_path = Path(input_dir)
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
@@ -44,7 +45,8 @@ def filter_directory(input_dir, output_dir, low_freq=500, high_freq=1500):
     audio_extensions = ['.wav', '.WAV', '.mp3', '.MP3', '.flac', '.FLAC']
     audio_files = []
     for ext in audio_extensions:
-        audio_files.extend(input_path.glob(f"*{ext}"))
+        # Use rglob to recursively search subdirectories
+        audio_files.extend(input_path.rglob(f"*{ext}"))
     
     if not audio_files:
         print(f"  No audio files found in {input_dir}")
@@ -52,17 +54,20 @@ def filter_directory(input_dir, output_dir, low_freq=500, high_freq=1500):
     
     print(f"  Found {len(audio_files)} file(s)")
     
-    for audio_file in sorted(audio_files):
+    for audio_file in tqdm(sorted(audio_files), desc="  Filtering files", unit="file"):
         try:
             audio, sr = librosa.load(audio_file, sr=None)
             filtered_audio = apply_bandpass_filter(audio, sr, low_freq, high_freq)
             max_val = np.max(np.abs(filtered_audio))
             if max_val > 0:
                 filtered_audio = filtered_audio / max_val * 0.95
-            output_file = output_path / audio_file.name
+            # Preserve relative path structure in output
+            relative_path = audio_file.relative_to(input_path)
+            output_file = output_path / relative_path
+            output_file.parent.mkdir(parents=True, exist_ok=True)
             sf.write(output_file, filtered_audio, sr)
         except Exception as e:
-            print(f"    Error processing {audio_file.name}: {e}")
+            tqdm.write(f"    Error processing {audio_file}: {e}")
     
     return len(audio_files)
 
@@ -112,7 +117,7 @@ def analyze_example_frequencies(filtered_examples_dir):
     
     all_peak_freqs = []
     
-    for example_file in example_files:
+    for example_file in tqdm(example_files, desc="  Analyzing examples", unit="file"):
         audio, sr = librosa.load(example_file, sr=None)
         peaks = find_dominant_frequencies(audio, sr)
         if peaks:
@@ -658,10 +663,11 @@ def main():
     
     # Step 4: Find files with peaks in frequency bands
     print("\n[4/5] Finding files with peaks in frequency bands...")
-    target_files = sorted(list(filtered_files_dir.glob("*.WAV")))
+    # Recursively find all WAV files in filtered_files and subdirectories
+    target_files = sorted(list(filtered_files_dir.rglob("*.WAV")))
     matching_files = []
     
-    for target_file in target_files:
+    for target_file in tqdm(target_files, desc="  Checking files for peaks", unit="file"):
         audio, sr = librosa.load(target_file, sr=None)
         peaks = find_dominant_frequencies(audio, sr)
         
@@ -669,8 +675,10 @@ def main():
             peak_freq = peak['freq']
             for band in frequency_bands:
                 if band['min'] <= peak_freq <= band['max']:
+                    # Store relative path from filtered_files_dir
+                    relative_path = target_file.relative_to(filtered_files_dir)
                     matching_files.append({
-                        'file': target_file.name,
+                        'file': str(relative_path),
                         'peak_freq': peak_freq,
                         'band': f"{band['min']:.1f}-{band['max']:.1f}"
                     })
@@ -687,8 +695,8 @@ def main():
     plots_dir = Path("pipeline_plots")
     plots_dir.mkdir(exist_ok=True)
     
-    for match in matching_files:
-        filename = match['file']
+    for match in tqdm(matching_files, desc="  Processing matched files", unit="file"):
+        filename = match['file']  # This is now a relative path
         peak_freq = match['peak_freq']
         target_file = filtered_files_dir / filename
         
@@ -732,8 +740,12 @@ def main():
             # Only create plots for files that meet criteria
             if meets_criteria:
                 # Create pattern detection plot with detection markers
-                pattern_filename = f"{Path(filename).stem}_peak_{peak_freq:.1f}Hz_pattern.png"
-                pattern_path = plots_dir / pattern_filename
+                # Preserve subdirectory structure in plots directory
+                filename_path = Path(filename)
+                pattern_filename = f"{filename_path.stem}_peak_{peak_freq:.1f}Hz_pattern.png"
+                # Create subdirectory structure matching the original file structure
+                pattern_path = plots_dir / filename_path.parent / pattern_filename
+                pattern_path.parent.mkdir(parents=True, exist_ok=True)
                 plot_pattern_detection(target_file, peak_freq, spike_times, spike_intervals, 
                                      times, rms_db, pattern_info, threshold_db=-10,
                                      detection_intervals=intervals_in_range,
@@ -754,6 +766,8 @@ def main():
                 }
                 
                 # Create file_info with all data
+                # Store relative path from plots_dir for the plot file
+                plot_relative_path = pattern_path.relative_to(plots_dir)
                 file_info = {
                     'file': filename,
                     'peak_freq': float(peak_freq),
@@ -764,12 +778,12 @@ def main():
                     'cv': float(cv) if cv is not None else None,
                     'meets_criteria': bool(meets_criteria),
                     'pattern_info': serializable_pattern_info,
-                    'pattern_plot_file': str(pattern_path)
+                    'pattern_plot_file': str(plot_relative_path)
                 }
                 
                 cv_str = f"{cv:.3f}" if cv is not None else "N/A"
-                print(f"  ✓ {filename}: {num_intervals_in_range} intervals in 0.2-1.5s range, CV={cv_str} (MEETS CRITERIA)")
-                print(f"    Created plots with {len(detection_spike_times)} detection spike(s) marked")
+                tqdm.write(f"  ✓ {filename}: {num_intervals_in_range} intervals in 0.2-1.5s range, CV={cv_str} (MEETS CRITERIA)")
+                tqdm.write(f"    Created plots with {len(detection_spike_times)} detection spike(s) marked")
                 final_matches.append(file_info)
             else:
                 reason = f"{num_intervals_in_range} intervals"
@@ -777,10 +791,10 @@ def main():
                     reason += " (<5 intervals)"
                 elif cv is not None and cv > 0.3:
                     reason += f", CV={cv:.3f} (>0.3, not close together)"
-                print(f"  - {filename}: {reason} (does not meet criteria, skipping plots)")
+                tqdm.write(f"  - {filename}: {reason} (does not meet criteria, skipping plots)")
                 
         except Exception as e:
-            print(f"  ✗ {filename}: Error checking intervals - {e}")
+            tqdm.write(f"  ✗ {filename}: Error checking intervals - {e}")
             import traceback
             traceback.print_exc()
     
@@ -808,17 +822,30 @@ def main():
         files_dir = Path("files")
         copied_files = []
         
-        for match in final_matches:
-            filename = match['file']
+        for match in tqdm(final_matches, desc="  Copying files", unit="file"):
+            filename = match['file']  # This is a relative path from filtered_files_dir
+            # Find the corresponding file in the original files directory
             source_file = files_dir / filename
             
             if source_file.exists():
+                # Preserve directory structure in results
                 dest_file = results_dir / filename
+                dest_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source_file, dest_file)
                 copied_files.append(filename)
-                print(f"  Copied: {filename}")
             else:
-                print(f"  Warning: {source_file} not found, skipping")
+                # Try to find the file by name in subdirectories if direct path doesn't work
+                found = False
+                for possible_file in files_dir.rglob(Path(filename).name):
+                    if possible_file.name == Path(filename).name:
+                        dest_file = results_dir / filename
+                        dest_file.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(possible_file, dest_file)
+                        copied_files.append(filename)
+                        found = True
+                        break
+                if not found:
+                    tqdm.write(f"  Warning: {source_file} not found, skipping")
         
         # Save results
         results_file = Path("owl_detection_results.json")

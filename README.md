@@ -10,6 +10,21 @@ This pipeline analyzes audio files to detect owl calls by:
 3. Detecting regular spike patterns that indicate owl calls
 4. Validating detections based on interval consistency
 
+## Quick Start: Viewing Results
+
+**If you're new to this project or just want to review detection results**, you can use the interactive visualization app to listen to detected audio files and see the detection patterns:
+
+```bash
+streamlit run visualize_results.py
+```
+
+This will open a web interface where you can:
+- **Select detected files** from a dropdown menu
+- **Play audio** directly in your browser
+- **View interactive visualizations** showing spike detections, intervals, and patterns
+
+The visualization app loads results from `owl_detection_results.json` (created by running the pipeline). If it's not in the project, see the [Usage](#usage) section below to run the detection pipeline first.
+
 ## Requirements
 
 Install dependencies from `requirements.txt`:
@@ -28,7 +43,8 @@ owl/
 ├── filtered_files/       # Filtered target files (500-1500 Hz)
 ├── pipeline_plots/       # Detection visualization plots
 ├── results/              # Original audio files with detected owl calls
-└── owl_detection_pipeline.py  # Main pipeline script
+├── owl_detection_pipeline.py  # Main pipeline script
+└── visualize_results.py  # Interactive Streamlit app for viewing results
 ```
 
 **Important**: Before running the pipeline, you must populate the `files/` folder with audio files (WAV format) that you want to analyze for owl calls.
@@ -105,6 +121,29 @@ For each detected file, a pattern plot is created showing:
 ### Detected Audio Files (`results/`)
 
 Original WAV files that meet all detection criteria are copied here for easy access.
+
+## Interactive Results Viewer
+
+After running the pipeline, you can use the interactive visualization app to review detections:
+
+```bash
+streamlit run visualize_results.py
+```
+
+The app provides:
+- **File Selection**: Browse and select from all detected files
+- **Audio Playback**: Listen to detected audio files directly in your browser
+- **Detection Visualization**: Interactive plots showing:
+  - Spike detection over time with detection spikes highlighted
+  - Interval analysis showing regular patterns
+  - Interval distribution histogram
+
+This is especially useful for:
+- **Reviewing detections**: Verify that detected files actually contain owl calls
+- **Understanding patterns**: See how the algorithm identifies regular spike patterns
+- **Quality control**: Quickly listen to and visualize multiple detections
+
+The visualization app automatically loads results from `owl_detection_results.json` and displays all files that met the detection criteria.
 
 ## Example Results
 

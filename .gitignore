@@ -4,11 +4,3 @@ files/*
 __pycache__/
 filtered_files/*
 !filtered_files/.gitkeep
-filtered_examples/*
-!filtered_examples/.gitkeep
-results/*
-!results/.gitkeep
-pipeline_plots/*
-!pipeline_plots/.gitkeep
-examples/*
-!examples/.gitkeep
