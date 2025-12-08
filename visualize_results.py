@@ -79,7 +79,7 @@ def main():
         
         # Audio info
         duration = len(audio_data) / sr
-        st.caption(f"Duration: {duration:.2f} seconds | Sample Rate: {sr} Hz"
+        st.caption(f"Duration: {duration:.2f} seconds | Sample Rate: {sr} Hz")
     
     plot_path = Path("pipeline_plots") / selected_file.get('pattern_plot_file', '')
     if plot_path.exists():
