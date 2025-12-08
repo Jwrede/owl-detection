@@ -15,6 +15,9 @@ This pipeline analyzes audio files to detect owl calls by:
 **If you're new to this project or just want to review detection results**, you can use the interactive visualization app to listen to detected audio files and see the detection patterns:
 
 ```bash
+python -m venv venv
+source venv activate
+pip install -r requirements.txt
 streamlit run visualize_results.py
 ```
 
