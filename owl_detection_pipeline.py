@@ -235,6 +235,17 @@ def check_interval_pattern(intervals, min_intervals=5, min_interval=0.2, max_int
     Returns:
         Tuple: (True/False, list of intervals in range, CV value)
     """
+    # First check: mean of ALL intervals must be greater than 0.2 seconds
+    if len(intervals) == 0:
+        return False, [], None
+    
+    all_intervals_array = np.array(intervals)
+    mean_all_intervals = np.mean(all_intervals_array)
+    
+    if mean_all_intervals <= 0.2:
+        return False, [], None
+    
+    # Filter to intervals in the specified range
     intervals_in_range = [i for i in intervals if min_interval <= i <= max_interval]
     
     if len(intervals_in_range) < min_intervals:
@@ -242,13 +253,9 @@ def check_interval_pattern(intervals, min_intervals=5, min_interval=0.2, max_int
     
     # Check if intervals are close together (low CV)
     intervals_array = np.array(intervals_in_range)
-    mean_interval = np.mean(intervals_array)
-    
-    if mean_interval == 0:
-        return False, intervals_in_range, None
-    
     std_interval = np.std(intervals_array)
-    cv = std_interval / mean_interval
+    mean_interval = np.mean(intervals_array)
+    cv = std_interval / mean_interval if mean_interval > 0 else np.inf
     
     # Intervals are "close together" if CV is below threshold
     is_close_together = cv <= max_cv

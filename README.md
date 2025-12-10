@@ -78,7 +78,8 @@ A file is considered to contain owl calls if it meets **all** of the following c
 
 1. **Frequency Match**: Has a dominant peak frequency within ±50 Hz of example frequencies
 2. **Regular Pattern**: Has >=5 intervals between spikes in the 0.2-1.5 second range
-3. **Consistent Intervals**: The intervals are "close together" (coefficient of variation CV <= 0.3)
+3. **Mean Interval**: The mean interval length is greater than 0.2 seconds
+4. **Consistent Intervals**: The intervals are "close together" (coefficient of variation CV <= 0.3)
 
 ### Example Frequency Bands
 
@@ -90,6 +91,7 @@ The pipeline analyzes example owl calls to determine frequency bands. Typical ba
 The system detects spikes above -10 dB threshold and analyzes intervals between spikes:
 - **Detection range**: 0.2-1.5 seconds
 - **Minimum intervals**: >=5 intervals in this range
+- **Mean interval requirement**: Mean interval length must be greater than 0.2 seconds
 - **Consistency requirement**: CV (coefficient of variation) <= 0.3
 
 The CV measures how consistent the intervals are:
