@@ -1,5 +1,5 @@
 # Nutze ein stabiles Python Image (3.10 ist aktuell gut für Librosa)
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # Arbeitsverzeichnis im Container
 WORKDIR /app
