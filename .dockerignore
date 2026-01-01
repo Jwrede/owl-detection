@@ -1,13 +1,9 @@
-# Unnötige System-Ordner
 __pycache__
 *.pyc
 venv/
 .git/
 
-# WICHTIG: Die riesigen Daten-Ordner ignorieren!
-# Wir mounten diese später als "Volume" in Coolify.
+examples/
 files/
 filtered_files/
-results/
-pipeline_plots/
 filtered_examples/
